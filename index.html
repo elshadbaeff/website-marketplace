@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <title>Marketplace</title>
+    <style>
+        /* Popup styles */
+        #dashboard {
+            display: none;
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            border: 1px solid #ccc;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            padding: 20px;
+            width: 300px;
+        }
+        #overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+        
+        /* Styles for displaying items side by side */
+        #itemsContainer {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .item {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center;
+            background-color: #f9f9f9;
+        }
+
+        .item img {
+            width: 100px;
+            height: auto;
+            margin-bottom: 10px;
+        }
+
+        /* Styles for item details popup */
+        #itemDetailsPopup {
+            display: none;
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            border: 1px solid #ccc;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            padding: 20px;
+            width: 400px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Welcome to the Marketplace</h1>
+        <h2 id="coin-balance-container" style="display: none;">Your Coin Balance: <span id="coin-balance">0</span> Coins</h2>
+        <script>
+            async function fetchCoinBalance() {
+                try {
+                    const response = await fetch('/get-coin-balance', {
+                        method: 'GET',
+                        credentials: 'include'
+                    });
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch coin balance');
+                    }
+                    const data = await response.json();
+                    if (data && data.coins !== undefined) {
+                        document.getElementById('coin-balance').innerText = data.coins;
+                    } else {
+                        console.error('Invalid coin balance data:', data);
+                    }
+                } catch (error) {
+                    console.error('Error fetching coin balance:', error);
+                    document.getElementById('coin-balance').innerText = '0';
+                }
+            }
+            
+            document.addEventListener('DOMContentLoaded', () => {
+                const token = localStorage.getItem('token');
+                if (token) {
+                    document.getElementById('coin-balance-container').style.display = 'block'; // Show balance container
+                    fetchCoinBalance(); // Fetch coin balance only if logged in
+                }
+                // Refresh balance every 5 seconds
+                setInterval(fetchCoinBalance, 5000);
+            });
+        </script>
+        <nav id="nav">
+            <!-- Buttons will be dynamically populated here -->
+        </nav>
+    </header>
+
+    <main>
+        <h2>Explore Items for Sale</h2>
+        <div id="itemsContainer">
+            <!-- Items will be dynamically loaded here -->
+        </div>
+        <button id="addItemButton" style="display: none;">Add Item</button>
+
+        <!-- Overlay for the popup -->
+        <div id="overlay"></div>
+
+        <!-- Dashboard Section -->
+        <div id="dashboard">
+            <header>
+                <h1>Create item</h1>
+            </header>
+            <h3>Create an Item for Sale</h3>
+            <label for="item-name">Item Name:</label>
+            <input type="text" id="item-name" required>
+            <label for="description">Description:</label>
+            <textarea id="description" required></textarea>
+            <label for="price">Price (in coins):</label>
+            <input type="number" id="price" required>
+            <label for="image">Image URL:</label>
+            <input type="text" id="image" required>
+            <label for="file">Upload File:</label>
+            <input type="file" id="file" required> <!-- New file input for item -->
+            <button id="createItemButton">Create Item</button>
+        </div>
+
+        <!-- Item Details Popup -->
+        <div id="itemDetailsPopup">
+            <h3 id="item-details-name"></h3>
+            <p id="item-details-description"></p>
+            <p>Price: <span id="item-details-price"></span> Coins</p>
+         <!--    <a id="item-download-link" href="#" download>Download File</a>-->
+            <button id="close-popup">Close</button>
+        </div>
+    </main>
+
+    <script>
+        async function fetchItems() {
+            try {
+                const response = await fetch('/items', {
+                    credentials: 'include'
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to fetch items');
+                }
+                const items = await response.json();
+                const itemsContainer = document.getElementById('itemsContainer');
+                itemsContainer.innerHTML = ''; // Clear existing items
+                items.forEach(item => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.classList.add('item');
+                    itemDiv.innerHTML = `
+                        <h3>${item.itemName}</h3>
+                        <p>${item.description}</p>
+                        <p>Price: ${item.price} Coins</p>
+                        <img src="${item.image}" alt="${item.itemName}">
+                        <button class="view-details" data-item-id="${item.id}">View Details</button>
+                        <button class="buy-item" data-item-id="${item.id}">Buy</button>
+                        <button class="delete-item" data-item-id="${item.id}" style="display: none;">Delete</button>
+                    `;
+                    itemsContainer.appendChild(itemDiv);
+                });
+            } catch (error) {
+                console.error('Error fetching items:', error);
+            }
+        }
+
+        function showItemDetails(itemId) {
+            const item = items.find(item => item.id === itemId);
+            document.getElementById('item-details-name').innerText = item.itemName;
+            document.getElementById('item-details-description').innerText = item.description;
+            document.getElementById('item-details-price').innerText = item.price;
+            document.getElementById('item-download-link').href = `uploads/${item.file}`; // Set download link
+            document.getElementById('itemDetailsPopup').style.display = 'block'; // Show popup
+        }
+
+        document.getElementById('close-popup').addEventListener('click', () => {
+            document.getElementById('itemDetailsPopup').style.display = 'none'; // Hide the popup
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchItems(); // Fetch items on page load
+
+            const token = localStorage.getItem('token');
+            const nav = document.getElementById('nav');
+            const addItemButton = document.getElementById('addItemButton');
+            const dashboard = document.getElementById('dashboard');
+            const overlay = document.getElementById('overlay');
+
+            if (token) {
+                // User is logged in, show logout button
+                const logoutButton = document.createElement('button');
+                logoutButton.textContent = 'Log Out';
+                logoutButton.addEventListener('click', () => {
+                    localStorage.removeItem('token'); // Remove the token
+                    window.location.href = 'index.html'; // Redirect to homepage
+                });
+                nav.appendChild(logoutButton);
+                addItemButton.style.display = 'inline'; // Show add item button
+            } else {
+                // User is not logged in, show login/register buttons
+                const loginLink = document.createElement('a');
+                loginLink.href = 'login.html';
+                loginLink.textContent = 'Login';
+                nav.appendChild(loginLink);
+
+                const registerLink = document.createElement('a');
+                registerLink.href = 'register.html';
+                registerLink.textContent = 'Register';
+                nav.appendChild(registerLink);
+            }
+
+            addItemButton.addEventListener('click', () => {
+                dashboard.style.display = 'block'; // Show the dashboard
+                overlay.style.display = 'block'; // Show the overlay
+            });
+
+            overlay.addEventListener('click', () => {
+                dashboard.style.display = 'none'; // Hide the dashboard
+                overlay.style.display = 'none'; // Hide the overlay
+            });
+
+            document.getElementById('createItemButton').addEventListener('click', async () => {
+                const itemName = document.getElementById('item-name').value.trim();
+                const description = document.getElementById('description').value.trim();
+                const price = parseFloat(document.getElementById('price').value);
+                const image = document.getElementById('image').value.trim();
+                const file = document.getElementById('file').files[0]; // Get the uploaded file
+
+                if (!itemName || !description || isNaN(price) || price <= 0 || !image || !file) {
+                    alert('Please fill in all fields correctly.');
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('itemName', itemName);
+                formData.append('description', description);
+                formData.append('price', price);
+                formData.append('image', image);
+                formData.append('file', file); // Append the file
+
+                try {
+                    const response = await fetch('/create-item', {
+                        method: 'POST',
+                        body: formData, // Send form data
+                    });
+
+                    if (response.ok) {
+                        alert('Item created successfully!');
+                        fetchItems(); // Refresh items after creation
+                        dashboard.style.display = 'none';
+                        overlay.style.display = 'none';
+                    } else {
+                        alert('Failed to create item.');
+                    }
+                } catch (error) {
+                    console.error('Error creating item:', error);
+                    alert('An error occurred. Please try again.');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

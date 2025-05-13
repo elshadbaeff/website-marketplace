@@ -1,0 +1,29 @@
+[
+    {
+        "id": 1740272456809,
+        "itemName": "Учебник по алгебре",
+        "description": "Мордкович",
+        "price": 10,
+        "image": "https://basket-10.wbbasket.ru/vol1426/part142658/142658393/images/big/1.webp",
+        "createdBy": "admin",
+        "createdAt": "2025-02-23T01:00:56.8092"
+    },
+    {
+        "id": 1740273755699,
+        "itemName": "Car",
+        "description": "automobile",
+        "price": 10,
+        "image": "https://audi-taganka.ru/upload/iblock/134/xeu2z0si6rgbnk5o18a5se2zko0xgyvn.jpg",
+        "createdBy": "admin",
+        "createdAt": "2025-02-23T01:22:15.6092"
+    },
+    {
+        "id": 1740273755610,
+        "itemName": "Учебник по химии",
+        "description": "Габриелян",
+        "price": 999,
+        "image": "https://cdn.prosv.ru/ba26/490b/8387/9d49fb47-ba26-490b-8387-ed8f0ef9704a-resized.webp",
+        "createdBy": "admin",
+        "createdAt": "2025-02-23T01:22:15.6092"
+    }
+]
